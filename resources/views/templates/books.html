@@ -1,0 +1,151 @@
+<div ng-repeat="(id, notification) in notifications track by id">
+    <growl-notification>
+        {{notification}}
+    </growl-notification>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 margin-tb">
+        <div class="pull-left">
+            <h1>Books</h1>
+        </div>
+        <div class="pull-right" style="padding-top:25px">
+            <div class="col-xs-8 box-tools" style="display:inline-table">
+                <div class="input-group">
+                    <input type="text" class="form-control input-sm ng-valid ng-dirty" placeholder="Search" ng-change="searchData()" ng-model="searchText" name="table_search" title="" tooltip="" data-original-title="Min character length is 3">
+                    <span class="input-group-addon">Search</span>
+                </div>
+            </div>
+            <div class="col-xs-2">
+                <button class="btn btn-success" data-toggle="modal" data-target="#create-data" ng-click="resetForm()"><i class="glyphicon glyphicon-plus"></i> New Book</button>
+            </div>
+        </div>
+    </div>
+</div>
+<table class="table table-bordered pagin-table">
+    <thead>
+        <tr>
+            <th class="text-center">No</th>
+            <th><span ng-click='sortColumn("book_title")'>Title <i ng-class='sortClass("book_title")'></i></span></th>
+            <th><span ng-click='sortColumn("book_author")'>Author <i ng-class='sortClass("book_author")'></i></span></th>
+            <th width="174px">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr dir-paginate="value in data | itemsPerPage:pageSize" total-items="totalData" current-page="currentPage">
+            <td class="text-center">{{ ($index + 1) + ((currentPage-1) * pageSize) }}</td>
+            <td>{{ value.book_title }}</td>
+            <td>{{ value.book_author }}</td>
+            <td>
+                <button data-toggle="modal" ng-click="edit(value.id)" data-target="#edit-data" class="btn btn-primary"><i class="glyphicon glyphicon-pencil"></i> Edit</button>
+                <button ng-click="remove(value, $index)" class="btn btn-danger"><i class="glyphicon glyphicon-trash"></i> Delete</button>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<dir-pagination-controls class="pull-right" on-page-change="pageChanged(newPageNumber)" direction-links="true" boundary-links="true" template-url="templates/pagination.html"></dir-pagination-controls>
+<div class="row">
+    <div class="col-lg-12 margin-tb">
+        <div class="pull-left">
+            <div class="col-xs-10 col-md-4" style="padding-top:5px;">
+                <div class="dropdown">
+                    <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenuExport" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" style="width: 150px;">
+                        {{selectedExport}}
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuExport">
+                        <li ng-repeat="item in exportMenu"><a ng-click="dropboxExportSelected(item)">{{item}}</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-xs-10 col-md-3" style="padding-top:5px;">
+                <button class="btn btn-info" ng-click="downloadCSV()"><i class="glyphicon glyphicon-save"></i> Export CSV</button>            
+            </div>
+            <div class="col-xs-4" style="padding-top:5px;">
+                <button class="btn btn-info" ng-click="downloadXML()"><i class="glyphicon glyphicon-save"></i> Export XML</button>
+            </div>
+        </div>    
+    </div>
+</div>
+
+<!-- Create Modal -->
+<div class="modal fade" id="create-data" tabindex="-1" role="dialog" aria-labelledby="ModalCreate">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="POST" name="addItem" role="form" ng-submit="saveAdd()">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                    <h4 class="modal-title" id="ModalCreateTitle">New Book</h4>
+                </div>
+                <div class="modal-body">                    
+                    <div class="row">                    
+                        <div class="col-xs-12 col-sm-12 col-md-12 alert alert-danger" ng-if="errors.length > 0">
+                            <ul>
+                                <li ng-repeat="error in errors">{{ error }}</li>
+                            </ul>
+                        </div>                     
+                        <div class="col-xs-12 col-sm-12 col-md-12">                                
+                            <div class="form-group">
+                                <label for="title" class="control-label">Title</label>
+                                <input ng-model="form.book_title" type="text" placeholder="Title" name="title" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-12 col-md-12">                                
+                            <div class="form-group">
+                                <label for="author" class="control-label">Author</label>
+                                <input ng-model="form.book_author" type="text" placeholder="Author" name="author" class="form-control" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pull-right" style="padding-top:25px">                         
+                        <button type="submit" ng-disabled="addItem.$invalid" class="btn btn-primary"><i class="glyphicon glyphicon-plus"></i> Add book</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    </div>    
+                    <div class="container"></div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="edit-data" tabindex="-1" role="dialog" aria-labelledby="ModalEdit">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="POST" name="editItem" role="form" ng-submit="saveEdit()">
+                <input ng-model="form.id" type="hidden" placeholder="Name" name="name" class="form-control" />
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                    <h4 class="modal-title" id="ModalEditTitle">Edit Book</h4>
+                </div>
+                <div class="modal-body">                   
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12 alert alert-danger" ng-if="errors.length > 0">
+                            <ul>
+                                <li ng-repeat="error in errors">{{ error }}</li>
+                            </ul>
+                        </div>
+                    
+                        <div class="col-xs-12 col-sm-12 col-md-12">
+                            <div class="form-group">
+                               <label for="title" class="control-label">Title</label>
+                               <input ng-model="form.book_title" type="text" placeholder="Title" name="title" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-12 col-md-12">
+                            <div class="form-group">
+                               <label for="author" class="control-label">Author</label>
+                               <input ng-model="form.book_author" type="text" placeholder="Author" name="author" class="form-control" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pull-right" style="padding-top:25px">                            
+                        <button type="submit" ng-disabled="editItem.$invalid" class="btn btn-primary"><i class="glyphicon glyphicon-ok"></i> Update book</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    </div>    
+                    <div class="container"></div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
